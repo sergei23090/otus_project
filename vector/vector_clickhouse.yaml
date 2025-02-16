@@ -1,0 +1,33 @@
+sources:
+  kafka_source:
+    type: kafka
+    bootstrap_servers: "kafka:9092"
+    topics: ["auditd_logs"]
+    group_id: "vector_clickhouse"
+
+transforms:
+  add_timestamp:
+    type: remap
+    inputs:
+      - kafka_source
+    source: |
+      # Добавляем временную метку, если она не приходит из источника.
+      .event_time = now()
+
+sinks:
+  clickhouse_sink:
+    type: clickhouse
+    inputs:
+      - add_timestamp
+    endpoint: "http://clickhouse-server:8123"
+    database: "logs"
+    table: "auditd_all"
+    auth:
+      strategy: "basic"
+      password: ""
+      user: "default"
+    encoding:
+      timestamp_format: "unix"
+    skip_unknown_fields: true
+    healthcheck:
+      enabled: false

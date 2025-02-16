@@ -7,7 +7,7 @@ services:
       - "8123:8123"  # HTTP интерфейс
       - "9000:9000"  # TCP интерфейс
     volumes:
-      - ./clickhouse_data:/var/lib/clickhouse
+      # - ./clickhouse_data:/var/lib/clickhouse   
       - ./init-scripts:/docker-entrypoint-initdb.d  # Для создания таблицы при старте
     ulimits:
       nofile:
@@ -15,13 +15,14 @@ services:
         hard: 262144
     restart: unless-stopped
 
+
   zookeeper:
     image: bitnami/zookeeper:latest
     container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
-      - ZOO_ENABLE_AUTH=no
+      - ALLOW_ANONYMOUS_LOGIN=yes
     restart: unless-stopped
 
   kafka:
@@ -33,20 +34,33 @@ services:
       - "9092:9092"
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
     restart: unless-stopped
 
-  vector:
-    image: timberio/vector:latest
-    container_name: vector
+  vector_kafka:
+    image: timberio/vector:latest-alpine
+    container_name: vector_kafka
     depends_on:
       - kafka
     volumes:
-      - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
-      # важный момент: нужно подключить volume, где лежат логи auditd
-      - ./auditd_logs/:/auditd_logs
+      # Конфигурация для отправки данных в Kafka
+      - ./vector/vector_kafka.yaml:/etc/vector/vector.yaml:ro
+      # Монтируем общий volume, где генерируются логи от auditd_demo
+      - ./auditd_logs:/var/log/audit
+    restart: unless-stopped
+
+  vector_clickhouse:
+    image: timberio/vector:latest-alpine
+    container_name: vector_clickhouse
+    depends_on:
+      - kafka
+      - clickhouse
+    volumes:
+      # Конфигурация для чтения из Kafka и отправки в ClickHouse
+      - ./vector/vector_clickhouse.yaml:/etc/vector/vector.yaml:ro
     restart: unless-stopped
 
   auditd_demo:
@@ -58,4 +72,3 @@ services:
     environment:
       - container=docker
     restart: unless-stopped
-

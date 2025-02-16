@@ -1,0 +1,29 @@
+sources:
+  auditd_logs:
+    type: file
+    include:
+      - "/var/log/audit/audit.log"
+    # Читаем все записи, даже если они уже созданы
+    ignore_older_secs: 0
+
+transforms:
+  parse_audit:
+    type: remap
+    inputs:
+      - auditd_logs
+    source: |
+      # Для примера просто сохраняем строку в поле raw_string.
+      .raw_string = .message
+
+sinks:
+  sink_kafka:
+    type: kafka
+    inputs:
+      - parse_audit
+    bootstrap_servers: "kafka:9092"
+    topic: "auditd_logs"
+    encoding:
+      codec: json
+
+  
+  
