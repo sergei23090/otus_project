@@ -1,29 +1,24 @@
 sources:
-  auditd_logs:
+  file_source:
     type: file
     include:
-      - "/var/log/audit/audit.log"
-    # Читаем все записи, даже если они уже созданы
+      - "/var/log/python_events/events.out"
     ignore_older_secs: 0
 
 transforms:
-  parse_audit:
+  security_events_remap:
     type: remap
     inputs:
-      - auditd_logs
+      - file_source
     source: |
-      # Для примера просто сохраняем строку в поле raw_string.
-      .raw_string = .message
+      . = parse_json!(.message)
 
 sinks:
-  sink_kafka:
+  kafka_sink:
     type: kafka
     inputs:
-      - parse_audit
+      - security_events_remap
     bootstrap_servers: "kafka:9092"
-    topic: "auditd_logs"
+    topic: "analytic_events_security"
     encoding:
       codec: json
-
-  
-  

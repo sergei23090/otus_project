@@ -6,15 +6,16 @@ services:
     ports:
       - "8123:8123"  # HTTP интерфейс
       - "9000:9000"  # TCP интерфейс
-    volumes:
-      # - ./clickhouse_data:/var/lib/clickhouse   
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=secret123
+    volumes:  
       - ./init-scripts:/docker-entrypoint-initdb.d  # Для создания таблицы при старте
     ulimits:
       nofile:
         soft: 262144
         hard: 262144
     restart: unless-stopped
-
 
   zookeeper:
     image: bitnami/zookeeper:latest
@@ -38,6 +39,27 @@ services:
       - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    restart: unless-stopped
+
+  event_generator:
+    build: ./event_generator
+    container_name: event_generator
+    volumes:
+      - python_logs:/app  # Файл /app/events.out будет доступен через volume
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  
+  vector_clickhouse:
+    image: timberio/vector:latest-alpine
+    container_name: vector_clickhouse
+    depends_on:
+      - kafka
+      - clickhouse
+    volumes:
+      - ./vector/vector_clickhouse.yaml:/etc/vector/vector.yaml:ro
     restart: unless-stopped
 
   vector_kafka:
@@ -46,29 +68,9 @@ services:
     depends_on:
       - kafka
     volumes:
-      # Конфигурация для отправки данных в Kafka
+      # Монтируем volume, где лежит файл с логами, в папку, указанную в конфигурации Vector
+      - python_logs:/var/log/python_events
       - ./vector/vector_kafka.yaml:/etc/vector/vector.yaml:ro
-      # Монтируем общий volume, где генерируются логи от auditd_demo
-      - ./auditd_logs:/var/log/audit
     restart: unless-stopped
-
-  vector_clickhouse:
-    image: timberio/vector:latest-alpine
-    container_name: vector_clickhouse
-    depends_on:
-      - kafka
-      - clickhouse
-    volumes:
-      # Конфигурация для чтения из Kafka и отправки в ClickHouse
-      - ./vector/vector_clickhouse.yaml:/etc/vector/vector.yaml:ro
-    restart: unless-stopped
-
-  auditd_demo:
-    build: ./auditd_demo
-    container_name: auditd_demo
-    privileged: true
-    volumes:
-      - ./auditd_logs/:/var/log/audit
-    environment:
-      - container=docker
-    restart: unless-stopped
+volumes:
+    python_logs:

@@ -2,7 +2,7 @@ sources:
   kafka_source:
     type: kafka
     bootstrap_servers: "kafka:9092"
-    topics: ["auditd_logs"]
+    topics: ["analytic_events_security"]
     group_id: "vector_clickhouse"
 
 transforms:
@@ -11,8 +11,10 @@ transforms:
     inputs:
       - kafka_source
     source: |
-      # Добавляем временную метку, если она не приходит из источника.
-      .event_time = now()
+      . = parse_json!(.message)
+      .DateTime_vector = to_int!(format_timestamp!(now(), format: "%s"))
+      .event_timestamp = format_timestamp!(parse_timestamp!(.event_timestamp, format: "%Y-%m-%dT%H:%M:%S.%f"),format: "%Y-%m-%dT%H:%M:%S")
+
 
 sinks:
   clickhouse_sink:
@@ -21,13 +23,14 @@ sinks:
       - add_timestamp
     endpoint: "http://clickhouse-server:8123"
     database: "logs"
-    table: "auditd_all"
+    table: "analytic_events_security"
     auth:
       strategy: "basic"
-      password: ""
+      password: "secret123"
       user: "default"
     encoding:
       timestamp_format: "unix"
     skip_unknown_fields: true
     healthcheck:
       enabled: false
+
