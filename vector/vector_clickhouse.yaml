@@ -1,7 +1,7 @@
 sources:
   kafka_source:
     type: kafka
-    bootstrap_servers: "kafka:9092"
+    bootstrap_servers: "kafka1:9092,kafka2:9092,kafka3:9092"
     topics: ["analytic_events_security"]
     group_id: "vector_clickhouse"
 
@@ -21,9 +21,9 @@ sinks:
     type: clickhouse
     inputs:
       - add_timestamp
-    endpoint: "http://clickhouse-server:8123"
+    endpoint: "http://clickhouse-cluster:8123"
     database: "logs"
-    table: "analytic_events_security"
+    table: "analytic_events_security_buffer"
     auth:
       strategy: "basic"
       password: "secret123"
@@ -33,4 +33,5 @@ sinks:
     skip_unknown_fields: true
     healthcheck:
       enabled: false
+
 

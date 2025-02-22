@@ -30,7 +30,9 @@ def generate_internal_ip():
         return f"192.168.{random.randint(0,255)}.{random.randint(1,254)}"
 
 def generate_log():
-    event_timestamp = datetime.utcnow().isoformat()
+    # Получаем текущее время в формате, подходящем для DateTime ClickHouse
+    now_str = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    event_timestamp = now_str  # Можно использовать текущее время в качестве event_timestamp
     server = random.choice(servers)
     app = random.choice(applications)
     pid = random.randint(100, 9999)
@@ -59,7 +61,8 @@ def generate_log():
 
     # Для ERROR и CRITICAL задаём код ошибки
     error_code = random.choice([401, 403, 404, 500, 503]) if log_level in ["ERROR", "CRITICAL"] else None
-    
+
+    # Формирование словаря с полями, соответствующими таблице
     log_entry = {
         "event_timestamp": event_timestamp,
         "server": server,
@@ -70,6 +73,7 @@ def generate_log():
         "user": user,
         "source_ip": src_ip,
         "destination_ip": dest_ip,
+        "details": message,
         "status": "failure" if log_level in ["ERROR", "CRITICAL"] else "success",
         "error_code": error_code,
         "raw_string": message
@@ -85,4 +89,4 @@ with open(log_file, "a") as f:
         f.write(json.dumps(log_entry) + "\n")
         f.flush()
         print(log_entry)
-        time.sleep(random.uniform(0.5, 2))
+        time.sleep(random.uniform(0.1, 1))

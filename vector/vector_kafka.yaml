@@ -18,7 +18,7 @@ sinks:
     type: kafka
     inputs:
       - security_events_remap
-    bootstrap_servers: "kafka:9092"
+    bootstrap_servers: "kafka1:9092,kafka2:9092,kafka3:9092"
     topic: "analytic_events_security"
     encoding:
       codec: json

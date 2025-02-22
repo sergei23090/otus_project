@@ -1,72 +1,239 @@
-version: "3.7"
+version: '3'
+
 services:
-  clickhouse:
+  zookeeper:
+      image: 'bitnami/zookeeper:latest'
+      hostname: zookeeper
+      container_name: zookeeper  
+      networks:
+        - clickhouse-cluster-network
+      environment:
+        - ALLOW_ANONYMOUS_LOGIN=yes
+        - ZOOKEEPER_CLIENT_PORT=2181
+      expose:
+        - "2182"
+        - "2888"
+        - "3888"
+  clickhouse1:
     image: clickhouse/clickhouse-server:latest
-    container_name: clickhouse-server
-    ports:
-      - "8123:8123"  # HTTP интерфейс
-      - "9000:9000"  # TCP интерфейс
+    container_name: clickhouse1
+    hostname: clickhouse1
     environment:
       - CLICKHOUSE_USER=default
       - CLICKHOUSE_PASSWORD=secret123
-    volumes:  
-      - ./init-scripts:/docker-entrypoint-initdb.d  # Для создания таблицы при старте
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
-    restart: unless-stopped
-
-  zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    restart: unless-stopped
-
-  kafka:
-    image: bitnami/kafka:latest
-    container_name: kafka
+    expose:
+      - "9000"
+      - "8123"
+    volumes:
+      - ./clickhouse/replica01/config.d:/etc/clickhouse-server/config.d
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - clickhouse-cluster-network
     depends_on:
       - zookeeper
+    restart: on-failure
+  clickhouse2:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse2
+    hostname: clickhouse2
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=secret123
+    expose:
+      - "9000"
+      - "8123"
+    volumes:
+      - ./clickhouse/replica02/config.d:/etc/clickhouse-server/config.d
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - clickhouse-cluster-network
+    depends_on:
+      - zookeeper
+    restart: on-failure
+  clickhouse3:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse3
+    hostname: clickhouse3
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=secret123
+    expose:
+      - "9000"
+      - "8123"
+    volumes:
+      - ./clickhouse/replica03/config.d:/etc/clickhouse-server/config.d
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - clickhouse-cluster-network
+    depends_on:
+      - zookeeper
+    restart: on-failure
+  clickhouse4:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse4
+    hostname: clickhouse4
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=secret123
+    expose:
+      - "9000"
+      - "8123"
+    volumes:
+      - ./clickhouse/replica04/config.d:/etc/clickhouse-server/config.d
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - clickhouse-cluster-network
+    depends_on:
+      - zookeeper
+    restart: on-failure
+
+  haproxy:
+    image: haproxy:latest
+    container_name: haproxy
+    hostname: clickhouse-cluster
+    networks:
+      - clickhouse-cluster-network
     ports:
-      - "9092:9092"
+      - "9001:9000"  
+      - "8124:8123"  # HTTP порт для ClickHouse c балансировкой
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - clickhouse1
+      - clickhouse2
+      - clickhouse3
+      - clickhouse4
+    restart: on-failure
+  
+
+  zookeeper_kafka:
+    image: 'bitnami/zookeeper:latest'
+    hostname: zookeeper_kafka
+    container_name: zookeeper_kafka
+    networks:
+      kafka-network:
+        aliases:
+          - zookeeper_kafka
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOOKEEPER_CLIENT_PORT=2181
+    expose:
+      - "2182"
+
+# Три Kafka-брокера с репликацией 3 партицией 3:
+  kafka1:
+    image: bitnami/kafka:latest
+    container_name: kafka1
+    hostname: kafka1
+    expose:
+      - "9092"
+    depends_on:
+      - zookeeper_kafka
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper_kafka:2181
       - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka1:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CFG_NUM_PARTITIONS=3
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=3
+    networks:
+      - kafka-network
+      - clickhouse-cluster-network
     restart: unless-stopped
 
+  kafka2:
+    image: bitnami/kafka:latest
+    container_name: kafka2
+    hostname: kafka2
+    expose:
+      - "9092"
+    depends_on:
+      - zookeeper_kafka
+    environment:
+      - KAFKA_BROKER_ID=2
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper_kafka:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka2:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CFG_NUM_PARTITIONS=3
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=3
+    networks:
+      - kafka-network
+      - clickhouse-cluster-network
+    restart: unless-stopped
+
+  kafka3:
+    image: bitnami/kafka:latest
+    container_name: kafka3
+    hostname: kafka3
+    expose:
+      - "9092"
+    depends_on:
+      - zookeeper_kafka
+    environment:
+      - KAFKA_BROKER_ID=3
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper_kafka:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka3:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CFG_NUM_PARTITIONS=3
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=3
+    networks:
+      - kafka-network
+      - clickhouse-cluster-network
+    restart: unless-stopped
+
+  #Сервис для генерации событий (producer)
   event_generator:
     build: ./event_generator
     container_name: event_generator
     volumes:
       - python_logs:/app  # Файл /app/events.out будет доступен через volume
     depends_on:
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
+      - clickhouse1
+      - clickhouse2
+      - clickhouse3
+      - clickhouse4
+    networks:
+      - kafka-network
     restart: unless-stopped
 
-  
+  #Сервис для отправки логов из кафки в кластер ClickHouse
   vector_clickhouse:
     image: timberio/vector:latest-alpine
     container_name: vector_clickhouse
     depends_on:
-      - kafka
-      - clickhouse
+      - kafka1
+      - kafka2
+      - kafka3
+      - clickhouse1
+      - clickhouse2
+      - clickhouse3
+      - clickhouse4
+    networks:
+      - kafka-network
+      - clickhouse-cluster-network
     volumes:
       - ./vector/vector_clickhouse.yaml:/etc/vector/vector.yaml:ro
     restart: unless-stopped
 
+  #Сервис для отправки логов в топик в кафке
   vector_kafka:
     image: timberio/vector:latest-alpine
     container_name: vector_kafka
     depends_on:
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
+    networks:
+      - kafka-network
     volumes:
       # Монтируем volume, где лежит файл с логами, в папку, указанную в конфигурации Vector
       - python_logs:/var/log/python_events
@@ -74,3 +241,14 @@ services:
     restart: unless-stopped
 volumes:
     python_logs:
+   
+
+
+networks:
+  clickhouse-cluster-network:
+    driver: bridge
+  kafka-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
