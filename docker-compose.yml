@@ -239,6 +239,21 @@ services:
       - python_logs:/var/log/python_events
       - ./vector/vector_kafka.yaml:/etc/vector/vector.yaml:ro
     restart: unless-stopped
+
+  vector_docker_logs:
+    image: timberio/vector:latest-alpine
+    container_name: vector_docker_logs
+    depends_on:
+      - kafka1
+      - clickhouse1
+    networks:
+      - kafka-network
+      - clickhouse-cluster-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./vector/vector_docker_logs.yaml:/etc/vector/vector.yaml:ro
+    restart: unless-stopped
+
 volumes:
     python_logs:
    

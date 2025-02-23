@@ -44,3 +44,49 @@ ENGINE = Distributed(
     analytic_events_security, 
     rand() -- Функция для распределения данных между шардами
 );
+
+CREATE TABLE IF NOT EXISTS logs.docker_logs
+(
+    DateTime_vector DateTime,
+    container_created_at DateTime(6),
+    container_id String,
+    container_name String,
+    host String,
+    image String,
+    message String,
+    source_type String,
+    stream String,
+    timestamp DateTime(6),
+    label String
+)
+ENGINE = ReplicatedMergeTree('/clickhouse/tables/{shard}/replicated_logs', '{replica}')
+ORDER BY (container_name, toStartOfMinute(DateTime_vector))
+PARTITION BY toYYYYMM(DateTime_vector);
+
+CREATE TABLE IF NOT EXISTS logs.docker_logs_buffer 
+AS logs.docker_logs
+ENGINE = Buffer(
+    logs, 
+    docker_logs, 
+    16, -- Количество потоков
+    10, -- Максимальное время в секундах
+    100, -- Максимальное количество строк
+    1048576, -- Максимальный размер данных в байтах
+    10485760, -- Максимальный объем данных в памяти
+    1000000, -- Максимальное количество строк в памяти
+    10000000 -- Максимальный объем данных в памяти
+);
+
+CREATE TABLE IF NOT EXISTS logs.docker_logs_dist
+AS logs.docker_logs
+ENGINE = Distributed(
+    otus, -- Имя кластера из конфигурации remote_servers
+    logs, 
+    docker_logs, 
+    rand() -- Функция для распределения данных между шардами
+);
+
+
+
+
+
