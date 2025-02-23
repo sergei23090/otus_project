@@ -1,6 +1,25 @@
 version: '3'
 
 services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - clickhouse-cluster-network
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      # Подключаем нужный плагин ClickHouse
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
+    volumes:
+      # Монтируем только provisioning- и конфигурационные файлы,
+      # чтобы дашборды были под версионным контролем.
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+    depends_on:
+      - haproxy
   zookeeper:
       image: 'bitnami/zookeeper:latest'
       hostname: zookeeper
@@ -240,9 +259,9 @@ services:
       - ./vector/vector_kafka.yaml:/etc/vector/vector.yaml:ro
     restart: unless-stopped
 
-  vector_docker_logs:
+  vector_docker_logs_kafka:
     image: timberio/vector:latest-alpine
-    container_name: vector_docker_logs
+    container_name: vector_docker_logs_kafka
     depends_on:
       - kafka1
       - clickhouse1
@@ -251,7 +270,7 @@ services:
       - clickhouse-cluster-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./vector/vector_docker_logs.yaml:/etc/vector/vector.yaml:ro
+      - ./vector/vector_docker_logs_kafka.yaml:/etc/vector/vector.yaml:ro
     restart: unless-stopped
 
 volumes:

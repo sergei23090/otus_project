@@ -48,7 +48,7 @@ ENGINE = Distributed(
 CREATE TABLE IF NOT EXISTS logs.docker_logs
 (
     DateTime_vector DateTime,
-    container_created_at DateTime(6),
+    container_created_at String,
     container_id String,
     container_name String,
     host String,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS logs.docker_logs
     message String,
     source_type String,
     stream String,
-    timestamp DateTime(6),
+    timestamp String,
     label String
 )
 ENGINE = ReplicatedMergeTree('/clickhouse/tables/{shard}/replicated_logs', '{replica}')

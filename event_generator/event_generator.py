@@ -89,4 +89,4 @@ with open(log_file, "a") as f:
         f.write(json.dumps(log_entry) + "\n")
         f.flush()
         print(log_entry)
-        time.sleep(random.uniform(0.1, 1))
+        time.sleep(random.uniform(0.001, 0.1))

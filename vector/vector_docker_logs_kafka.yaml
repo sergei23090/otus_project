@@ -3,22 +3,11 @@ sources:
     type: docker_logs
     docker_host: "unix:///var/run/docker.sock"
     
-transforms:
-  parse_container_log:
-    type: remap
-    inputs:
-      - docker_logs
-    source: |
-      .DateTime_vector = to_int!(format_timestamp!(now(), format: "%s"))
-
-
-
 sinks:
-  # Пример: отправить в Kafka
   logs_to_kafka:
     type: kafka
     inputs: 
-      - "parse_container_log"
+      - "docker_logs"
     bootstrap_servers: "kafka1:9092,kafka2:9092,kafka3:9092"
     topic: "all_docker_logs"
     encoding:

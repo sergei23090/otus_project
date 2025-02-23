@@ -1,29 +1,63 @@
 sources:
-  kafka_source:
+  kafka_source_security_events:
     type: kafka
     bootstrap_servers: "kafka1:9092,kafka2:9092,kafka3:9092"
     topics: ["analytic_events_security"]
     group_id: "vector_clickhouse"
 
+  kafka_source_docker_logs:
+    type: kafka
+    bootstrap_servers: "kafka1:9092,kafka2:9092,kafka3:9092"
+    topics: ["all_docker_logs"]
+    group_id: "vector_clickhouse"
+
+  
+
 transforms:
-  add_timestamp:
+  security_events_remap:
     type: remap
     inputs:
-      - kafka_source
+      - "kafka_source_security_events"
     source: |
       . = parse_json!(.message)
       .DateTime_vector = to_int!(format_timestamp!(now(), format: "%s"))
-      # .event_timestamp = format_timestamp!(parse_timestamp!(.event_timestamp, format: "%Y-%m-%dT%H:%M:%S.%f"),format: "%Y-%m-%dT%H:%M:%S")
-      .event_timestamp = parse_timestamp!(.event_timestamp,format: "%Y-%m-%d %H:%M:%S")
+      .event_timestamp = format_timestamp!(parse_timestamp!(.event_timestamp, format: "%Y-%m-%dT%H:%M:%S.%f"),format: "%Y-%m-%dT%H:%M:%S") ## для windows
+      #.event_timestamp = parse_timestamp!(.event_timestamp,format: "%Y-%m-%d %H:%M:%S") ## для macos
+
+  docker_logs_remap:
+    type: remap
+    inputs:
+      - "kafka_source_docker_logs"
+    source: |
+      . = parse_json!(.message)
+      .DateTime_vector = to_int!(format_timestamp!(now(), format: "%s"))
+
 
 sinks:
-  clickhouse_sink:
+  clickhouse_security_logs:
     type: clickhouse
     inputs:
-      - add_timestamp
+      - "security_events_remap"
     endpoint: "http://clickhouse-cluster:8123"
     database: "logs"
     table: "analytic_events_security_buffer"
+    auth:
+      strategy: "basic"
+      password: "secret123"
+      user: "default"
+    encoding:
+      timestamp_format: "unix"
+    skip_unknown_fields: true
+    healthcheck:
+      enabled: false
+
+  clickhouse_docker_logs:
+    type: clickhouse
+    inputs:
+      - "docker_logs_remap"
+    endpoint: "http://clickhouse-cluster:8123"
+    database: "logs"
+    table: "docker_logs_buffer"
     auth:
       strategy: "basic"
       password: "secret123"
