@@ -11,8 +11,6 @@ sources:
     topics: ["all_docker_logs"]
     group_id: "vector_clickhouse"
 
-  
-
 transforms:
   security_events_remap:
     type: remap
@@ -21,8 +19,8 @@ transforms:
     source: |
       . = parse_json!(.message)
       .DateTime_vector = to_int!(format_timestamp!(now(), format: "%s"))
-      .event_timestamp = format_timestamp!(parse_timestamp!(.event_timestamp, format: "%Y-%m-%dT%H:%M:%S.%f"),format: "%Y-%m-%dT%H:%M:%S") ## для windows
-      #.event_timestamp = parse_timestamp!(.event_timestamp,format: "%Y-%m-%d %H:%M:%S") ## для macos
+      #.event_timestamp = format_timestamp!(parse_timestamp!(.event_timestamp, format: "%Y-%m-%dT%H:%M:%S.%f"),format: "%Y-%m-%dT%H:%M:%S") ## для windows
+      .event_timestamp = parse_timestamp!(.event_timestamp,format: "%Y-%m-%d %H:%M:%S") ## для macos
 
   docker_logs_remap:
     type: remap
@@ -31,7 +29,6 @@ transforms:
     source: |
       . = parse_json!(.message)
       .DateTime_vector = to_int!(format_timestamp!(now(), format: "%s"))
-
 
 sinks:
   clickhouse_security_logs:

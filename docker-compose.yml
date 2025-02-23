@@ -20,6 +20,52 @@ services:
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
     depends_on:
       - haproxy
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus
+    ports:
+      - "9090:9090"  
+    networks:
+      - clickhouse-cluster-network
+      - kafka-network
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml  # Конфигурация Prometheus
+    restart: unless-stopped
+    depends_on:
+      - kafka1
+      - haproxy
+      - zookeeper
+      - zookeeper_kafka
+  
+  
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    command:
+      - '--kafka.server=kafka1:9092'
+      - '--kafka.server=kafka2:9092'
+      - '--kafka.server=kafka3:9092'
+    expose:
+      - "9308"
+    networks:
+      - kafka-network
+    depends_on:
+      - prometheus
+
+  zookeeper-exporter:
+    image: dabealu/zookeeper-exporter:latest
+    container_name: zookeeper-exporter
+    hostname: zookeeper-exporter
+    expose:
+      - "9141" 
+    command: --zk-hosts="zookeeper:2181,zookeeper_kafka:2181"
+    networks:
+      - clickhouse-cluster-network
+      - kafka-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
   zookeeper:
       image: 'bitnami/zookeeper:latest'
       hostname: zookeeper

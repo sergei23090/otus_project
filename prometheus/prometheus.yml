@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s # Интервал сбора метрик
+  evaluation_interval: 15s # Интервал оценки правил
+
+scrape_configs:
+  # Мониторинг ClickHouse
+  - job_name: "clickhouse"
+    static_configs:
+      - targets:
+          - "clickhouse1:9363"
+          - "clickhouse2:9363"
+          - "clickhouse3:9363"
+          - "clickhouse4:9363"
+        labels:
+          group: "clickhouse"
+
+  # Мониторинг Zookeeper
+  - job_name: "zookeeper-exporter"
+    static_configs:
+      - targets:
+          - "zookeeper-exporter:9141"
+        labels:
+          group: "zookeeper"
+
+  - job_name: "kafka-exporter"
+    static_configs:
+      - targets:
+          - "kafka-exporter:9308"
+        labels:
+          group: "kafka"
