@@ -1,0 +1,526 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 4,
+    "links": [],
+    "panels": [
+      {
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 5,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true
+        },
+        "pluginVersion": "11.5.2",
+        "targets": [
+          {
+            "adHocFilters": [],
+            "adHocValuesQuery": "",
+            "add_metadata": true,
+            "contextWindowSize": "10",
+            "database": "logs",
+            "datasource": {
+              "type": "vertamedia-clickhouse-datasource",
+              "uid": "PDEE91DDB90597936"
+            },
+            "dateTimeColDataType": "event_timestamp",
+            "dateTimeType": "DATETIME",
+            "editorMode": "sql",
+            "extrapolate": true,
+            "format": "table",
+            "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+            "interval": "",
+            "intervalFactor": 1,
+            "query": "SELECT\n  application,\n  error_code,\n  count(*) as errors\nFROM logs.analytic_events_security_dist\nWHERE $timeFilter AND error_code != ''\nGROUP BY application, error_code\nORDER BY errors DESC",
+            "rawQuery": "/* grafana dashboard=New dashboard, user=1 */\nSELECT\n  application,\n  error_code,\n  count(*) as errors\nFROM logs.analytic_events_security_dist\nWHERE event_timestamp >= toDateTime(1740389371) AND event_timestamp <= toDateTime(1740410971) AND error_code != ''\nGROUP BY application, error_code\nORDER BY errors DESC",
+            "refId": "A",
+            "round": "0s",
+            "skip_comments": true,
+            "table": "analytic_events_security_dist",
+            "useWindowFuncForMacros": true
+          }
+        ],
+        "title": "Ошибки по приложениям",
+        "type": "table"
+      },
+      {
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 17,
+          "w": 24,
+          "x": 0,
+          "y": 9
+        },
+        "id": 4,
+        "options": {
+          "displayMode": "gradient",
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": false
+          },
+          "maxVizHeight": 300,
+          "minVizHeight": 16,
+          "minVizWidth": 8,
+          "namePlacement": "auto",
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": true
+          },
+          "showUnfilled": true,
+          "sizing": "auto",
+          "valueMode": "color"
+        },
+        "pluginVersion": "11.5.2",
+        "targets": [
+          {
+            "adHocFilters": [],
+            "adHocValuesQuery": "",
+            "add_metadata": false,
+            "contextWindowSize": "10",
+            "database": "logs",
+            "datasource": {
+              "type": "vertamedia-clickhouse-datasource",
+              "uid": "PDEE91DDB90597936"
+            },
+            "dateTimeColDataType": "event_timestamp",
+            "dateTimeType": "DATETIME",
+            "editorMode": "sql",
+            "extrapolate": false,
+            "format": "table",
+            "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+            "interval": "",
+            "intervalFactor": 1,
+            "query": "SELECT\n  event_type,\n  count(*) as count\nFROM logs.analytic_events_security_dist\nWHERE $timeFilter\nGROUP BY event_type\nORDER BY count DESC",
+            "rawQuery": "SELECT\n  event_type,\n  count(*) as count\nFROM logs.analytic_events_security_dist\nWHERE event_timestamp >= toDateTime(1740389371) AND event_timestamp <= toDateTime(1740410971)\nGROUP BY event_type\nORDER BY count DESC",
+            "refId": "A",
+            "round": "0s",
+            "skip_comments": false,
+            "table": "analytic_events_security_dist",
+            "useWindowFuncForMacros": false
+          }
+        ],
+        "title": "Анализ типов событий",
+        "type": "bargauge"
+      },
+      {
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 26
+        },
+        "id": 1,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "pluginVersion": "11.5.2",
+        "targets": [
+          {
+            "adHocFilters": [],
+            "adHocValuesQuery": "",
+            "add_metadata": true,
+            "contextWindowSize": "10",
+            "database": "logs",
+            "datasource": {
+              "type": "vertamedia-clickhouse-datasource",
+              "uid": "PDEE91DDB90597936"
+            },
+            "dateTimeColDataType": "event_timestamp",
+            "dateTimeType": "DATETIME",
+            "editorMode": "sql",
+            "extrapolate": true,
+            "format": "time_series",
+            "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+            "interval": "",
+            "intervalFactor": 1,
+            "query": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+            "rawQuery": "/* grafana dashboard=New dashboard, user=1 */\nSELECT (intDiv(toUInt32(event_timestamp), 20) * 20) * 1000 as t, count() FROM logs.analytic_events_security_dist WHERE event_timestamp >= toDateTime(1740389371) AND event_timestamp <= toDateTime(1740410971) GROUP BY t ORDER BY t",
+            "refId": "A",
+            "round": "0s",
+            "skip_comments": true,
+            "table": "analytic_events_security_dist",
+            "useWindowFuncForMacros": true
+          }
+        ],
+        "title": "Временной ряд событий",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineWidth": 1,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 34
+        },
+        "id": 3,
+        "options": {
+          "barRadius": 0,
+          "barWidth": 0.97,
+          "fullHighlight": false,
+          "groupWidth": 0.7,
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "orientation": "auto",
+          "showValue": "auto",
+          "stacking": "none",
+          "tooltip": {
+            "hideZeros": false,
+            "mode": "single",
+            "sort": "none"
+          },
+          "xTickLabelRotation": 0,
+          "xTickLabelSpacing": 0
+        },
+        "pluginVersion": "11.5.2",
+        "targets": [
+          {
+            "adHocFilters": [],
+            "adHocValuesQuery": "",
+            "add_metadata": true,
+            "contextWindowSize": "10",
+            "database": "logs",
+            "datasource": {
+              "type": "vertamedia-clickhouse-datasource",
+              "uid": "PDEE91DDB90597936"
+            },
+            "dateTimeColDataType": "event_timestamp",
+            "dateTimeType": "DATETIME",
+            "editorMode": "sql",
+            "extrapolate": true,
+            "format": "table",
+            "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+            "interval": "",
+            "intervalFactor": 1,
+            "query": "SELECT\n  log_level,\n  count(*) as count\nFROM logs.analytic_events_security_dist\nWHERE $timeFilter\nGROUP BY log_level",
+            "rawQuery": "/* grafana dashboard=New dashboard, user=1 */\nSELECT\n  log_level,\n  count(*) as count\nFROM logs.\nWHERE event_timestamp >= toDateTime(1740389371) AND event_timestamp <= toDateTime(1740410971)\nGROUP BY log_level",
+            "refId": "A",
+            "round": "0s",
+            "skip_comments": true,
+            "table": "analytic_events_security_dist",
+            "useWindowFuncForMacros": true
+          }
+        ],
+        "title": "Распределение логов по уровням",
+        "type": "barchart"
+      },
+      {
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 42
+        },
+        "id": 2,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "frameIndex": 6,
+          "showHeader": true
+        },
+        "pluginVersion": "11.5.2",
+        "targets": [
+          {
+            "adHocFilters": [],
+            "adHocValuesQuery": "",
+            "add_metadata": false,
+            "contextWindowSize": "10",
+            "database": "logs",
+            "datasource": {
+              "type": "vertamedia-clickhouse-datasource",
+              "uid": "PDEE91DDB90597936"
+            },
+            "dateTimeColDataType": "event_timestamp",
+            "dateTimeType": "DATETIME",
+            "editorMode": "sql",
+            "extrapolate": false,
+            "format": "time_series",
+            "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+            "hide": false,
+            "interval": "",
+            "intervalFactor": 1,
+            "query": "SELECT\n  event_timestamp,\n  server,\n  application,\n  user,\n  source_ip,\n  destination_ip,\n  details,\n  status,\n  error_code,\n  raw_string\nFROM logs.analytic_events_security_dist\nWHERE $timeFilter\nORDER BY event_timestamp DESC\nLIMIT 100",
+            "rawQuery": "SELECT\n  event_timestamp,\n  server,\n  application,\n  user,\n  source_ip,\n  destination_ip,\n  details,\n  status,\n  error_code,\n  raw_string\nFROM logs.analytic_events_security_dist\nWHERE event_timestamp >= toDateTime(1740389371) AND event_timestamp <= toDateTime(1740410971)\nORDER BY event_timestamp DESC\nLIMIT 100",
+            "refId": "A",
+            "round": "0s",
+            "showFormattedSQL": true,
+            "skip_comments": false,
+            "table": "analytic_events_security_dist",
+            "useWindowFuncForMacros": false
+          }
+        ],
+        "title": "Детализированная таблица логов",
+        "type": "table"
+      }
+    ],
+    "preload": false,
+    "refresh": "",
+    "schemaVersion": 40,
+    "tags": [],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "New dashboard",
+    "uid": "eee1jmnc5ks1sc",
+    "version": 7,
+    "weekStart": ""
+  }
